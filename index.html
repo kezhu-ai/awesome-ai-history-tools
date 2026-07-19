@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>awesome-ai-history-tools — four Rust CLIs for the AI coding era</title>
+  <meta name="description" content="ctxguard (context budget) + mcp-sentry (MCP firewall) + recall-ai (AI history search) + pinpoint (prompt log). Local-first, single Rust binary each, zero cloud." />
+  <meta property="og:title" content="awesome-ai-history-tools — four Rust CLIs for the AI coding era" />
+  <meta property="og:description" content="Context budget. MCP firewall. AI history search. Prompt log. All Rust, all local-first, all single binary." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦀</text></svg>" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    :root{--bg:#0a0a0f;--bg-elev:#13131a;--border:#2a2a35;--fg:#e6e6f0;--fg-dim:#9a9ab0;--accent:#10b981;--accent-glow:rgba(16,185,129,0.15);--warn:#f59e0b;--danger:#ef4444;--purple:#8b5cf6;--cyan:#06b6d4}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--fg);line-height:1.6;font-feature-settings:"ss01","cv01"}
+    .mono{font-family:'JetBrains Mono',ui-monospace,monospace}
+    .container{max-width:1100px;margin:0 auto;padding:3rem 1.5rem}
+    .hero{text-align:center;padding:5rem 0 4rem}
+    .hero h1{font-size:clamp(2.5rem,6vw,4.5rem);font-weight:800;line-height:1.05;letter-spacing:-0.02em;margin-bottom:1.5rem}
+    .hero h1 span{background:linear-gradient(135deg,#10b981 0%,#06b6d4 50%,#8b5cf6 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+    .hero p{font-size:1.25rem;color:var(--fg-dim);max-width:680px;margin:0 auto 2rem}
+    .badges{display:flex;justify-content:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:2.5rem}
+    .badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:var(--bg-elev);border:1px solid var(--border);border-radius:999px;font-size:13px;color:var(--fg-dim);text-decoration:none}
+    .badge.green{border-color:rgba(16,185,129,0.4);color:var(--accent)}
+    .cta{display:inline-flex;align-items:center;gap:10px;padding:14px 28px;background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:#050509;border-radius:10px;font-weight:700;font-size:15px;text-decoration:none;box-shadow:0 4px 32px rgba(16,185,129,0.3);transition:transform .15s}
+    .cta:hover{transform:translateY(-2px)}
+    .cta.secondary{background:var(--bg-elev);color:var(--fg);border:1px solid var(--border);box-shadow:none}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.25rem;margin:3rem 0}
+    .tool-card{background:var(--bg-elev);border:1px solid var(--border);border-radius:12px;padding:1.75rem;transition:all .2s;text-decoration:none;color:inherit;display:block}
+    .tool-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+    .tool-icon{width:44px;height:44px;background:var(--accent-glow);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:1rem}
+    .tool-icon.purple{background:rgba(139,92,246,0.15)}
+    .tool-icon.cyan{background:rgba(6,182,212,0.15)}
+    .tool-icon.warn{background:rgba(245,158,11,0.15)}
+    .tool-card h3{font-size:1.15rem;font-weight:600;margin-bottom:0.5rem}
+    .tool-card p{color:var(--fg-dim);font-size:14px;margin-bottom:1rem}
+    .tool-card .install{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent);background:rgba(16,185,129,0.08);padding:6px 10px;border-radius:6px;display:inline-block}
+    .section-title{font-size:0.75rem;font-weight:600;letter-spacing:0.18em;color:var(--accent);text-transform:uppercase;text-align:center;margin-bottom:0.5rem}
+    .section-h{font-size:2.25rem;font-weight:700;text-align:center;margin-bottom:2.5rem;letter-spacing:-0.01em}
+    .dataflow{background:var(--bg-elev);border:1px solid var(--border);border-radius:12px;padding:2.5rem;margin:3rem 0;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.85;white-space:pre;overflow-x:auto}
+    .dataflow .you{color:#fbbf24}
+    .dataflow .pp{color:var(--accent);font-weight:600}
+    .dataflow .ctx{color:var(--cyan);font-weight:600}
+    .dataflow .recall{color:var(--purple);font-weight:600}
+    .dataflow .mcp{color:var(--warn);font-weight:600}
+    .stats{background:var(--bg-elev);border:1px solid var(--border);border-radius:12px;padding:2.5rem;margin:3rem 0}
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.5rem;margin-top:1.5rem}
+    .stat-num{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:2.5rem;line-height:1;background:linear-gradient(180deg,#fff 0%,#9a9ab0 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+    .stat-label{color:var(--fg-dim);font-size:14px;margin-top:0.5rem}
+    .install-block{background:#050509;border:1px solid var(--border);border-radius:8px;padding:1.25rem 1.5rem;margin:1.5rem 0;font-family:'JetBrains Mono',monospace;font-size:14px;line-height:1.8}
+    .install-block .prompt{color:var(--accent);user-select:none}
+    .install-block .cmd{color:var(--fg)}
+    .install-block .comment{color:var(--fg-dim)}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin:3rem 0}
+    @media (max-width:768px){.row{grid-template-columns:1fr}.container{padding:2rem 1rem}.hero{padding:3rem 0 2rem}}
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <section class="hero">
+    <div class="badges">
+      <span class="badge green">🦀 Rust 1.94</span>
+      <span class="badge">📦 1.1 MB each</span>
+      <span class="badge">🔒 local-first</span>
+      <span class="badge">💸 $0 cloud</span>
+      <span class="badge">📜 MIT OR Apache-2.0</span>
+    </div>
+    <h1>Four Rust CLIs for the<br/><span>AI coding era</span></h1>
+    <p>Context budget. MCP firewall. AI history search. Prompt log.
+    All local-first, all single binary, all 100% open source.</p>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
+      <a href="#install" class="cta">cargo install ctxguard recall-ai pinpoint mcp-sentry</a>
+      <a href="https://github.com/kezhu-ai" class="cta secondary">★ Star on GitHub</a>
+    </div>
+  </section>
+
+  <section>
+    <p class="section-title">// The four tools</p>
+    <h2 class="section-h">Each solves a different pain. Together they're a kit.</h2>
+
+    <div class="grid">
+      <a class="tool-card" href="https://github.com/kezhu-ai/ctxguard">
+        <div class="tool-icon">📊</div>
+        <h3>ctxguard</h3>
+        <p>ulimit for Claude Code's 200k context window. <code class="mono">warn | compress | kill</code> when your agent burns too many tokens.</p>
+        <span class="install">cargo install ctxguard</span>
+      </a>
+
+      <a class="tool-card" href="https://github.com/kezhu-ai/recall-ai">
+        <div class="tool-icon purple">🔍</div>
+        <h3>recall-ai</h3>
+        <p>Search every AI conversation you've ever had, locally. SQLite + FTS5 over ChatGPT / Claude / Claude Code / Codex exports.</p>
+        <span class="install">cargo install recall-ai</span>
+      </a>
+
+      <a class="tool-card" href="https://github.com/kezhu-ai/pinpoint">
+        <div class="tool-icon cyan">📌</div>
+        <h3>pinpoint</h3>
+        <p>Your <code class="mono">~/.bash_history</code> but for AI prompts. Save the keepers with one keystroke (<code class="mono">pp</code> shell helper).</p>
+        <span class="install">cargo install pinpoint</span>
+      </a>
+
+      <a class="tool-card" href="https://github.com/kezhu-ai/mcp-sentry">
+        <div class="tool-icon warn">🛡️</div>
+        <h3>mcp-sentry</h3>
+        <p>Policy-as-code firewall for MCP servers. Approve / deny / audit every <code class="mono">tools/call</code> from your AI agent.</p>
+        <span class="install">cargo install mcp-sentry</span>
+      </a>
+    </div>
+  </section>
+
+  <section>
+    <p class="section-title">// How they compose</p>
+    <h2 class="section-h">The daily loop</h2>
+    <div class="dataflow"><span class="you">            you (the dev)
+                  │
+       ┌──────────┼──────────┐
+       │          │          │
+       ▼          ▼          ▼
+   ┌───────┐  ┌───────┐  ┌─────────┐
+   │  <span class="pp">pp</span>    │  │ <span class="ctx">ctx</span>   │  │ <span class="recall">recall</span>  │
+   │  log   │  │ budget │  │ search  │
+   │  save  │  │  run   │  │ history │
+   └───┬───┘  └───┬───┘  └────┬────┘
+       │          │           │
+       └──────────┼───────────┘
+                  ▼
+           ┌─────────────┐
+           │  <span class="mcp">mcp-sentry</span>  │
+           │   gate      │
+           │  the MCP    │
+           │  servers    │
+           └─────────────┘
+
+</span></div>
+  </section>
+
+  <section>
+    <p class="section-title">// Real numbers (from these tools on a real machine)</p>
+    <h2 class="section-h">The numbers don't lie.</h2>
+    <div class="stats">
+      <div class="stats-grid">
+        <div>
+          <div class="stat-num">2.1B</div>
+          <div class="stat-label">context tokens in 7 days<br/>(caught by <strong>ctxguard</strong>)</div>
+        </div>
+        <div>
+          <div class="stat-num">812×</div>
+          <div class="stat-label">faster than ccusage<br/>(Rust 1.1 MB vs Node 247 pkgs)</div>
+        </div>
+        <div>
+          <div class="stat-num">24 ms</div>
+          <div class="stat-label">to parse 3.9 MB Codex rollout<br/>(<strong>recall-ai</strong> on raw JSONL)</div>
+        </div>
+        <div>
+          <div class="stat-num">14</div>
+          <div class="stat-label">MCP servers discovered<br/>(<strong>recall-ai list</strong>)</div>
+        </div>
+        <div>
+          <div class="stat-num">~5 ms</div>
+          <div class="stat-label">to save a prompt<br/>(<strong>pinpoint log</strong> via FTS5)</div>
+        </div>
+        <div>
+          <div class="stat-num">0</div>
+          <div class="stat-label">cloud accounts needed<br/>(across all 4 tools)</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="install">
+    <p class="section-title">// Install</p>
+    <h2 class="section-h">Four binaries. One cargo.</h2>
+    <div class="install-block">
+<span class="comment"># Prerequisites: Rust 1.74+</span>
+<span class="prompt">$</span> <span class="cmd">curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y</span>
+
+<span class="comment"># Install all four (or pick what you need)</span>
+<span class="prompt">$</span> <span class="cmd">cargo install ctxguard recall-ai pinpoint mcp-sentry</span>
+
+<span class="comment"># Or one at a time</span>
+<span class="prompt">$</span> <span class="cmd">cargo install ctxguard      # ulimit for AI context</span>
+<span class="prompt">$</span> <span class="cmd">cargo install recall-ai    # search your AI history</span>
+<span class="prompt">$</span> <span class="cmd">cargo install pinpoint     # log the keepers</span>
+<span class="prompt">$</span> <span class="cmd">cargo install mcp-sentry   # gate the servers</span>
+
+<span class="comment"># Pre-built binaries (faster)</span>
+<span class="prompt">$</span> <span class="cmd">curl -fsSL https://raw.githubusercontent.com/kezhu-ai/ctxguard/master/install.sh | sh</span>
+    </div>
+  </section>
+
+  <section>
+    <p class="section-title">// Why this kit exists</p>
+    <h2 class="section-h">The AI coding era is leaky. We plug the holes.</h2>
+    <div class="row">
+      <div class="stats" style="margin:0">
+        <h3 style="font-size:1.1rem;margin-bottom:0.75rem">Without these tools</h3>
+        <ul style="color:var(--fg-dim);padding-left:1.5rem">
+          <li>You write 50 prompts/day, lose the keepers by Friday.</li>
+          <li>Your agent re-reads <code class="mono">auth.ts</code> 30 times. Wallet doesn't scream (prompt caching hides it), but context window does.</li>
+          <li>That MCP server you installed — is it reading <code class="mono">~/.ssh</code>? You don't know.</li>
+          <li>"What was that bug fix from 3 weeks ago?" → grep, scroll, give up.</li>
+        </ul>
+      </div>
+      <div class="stats" style="margin:0">
+        <h3 style="font-size:1.1rem;margin-bottom:0.75rem">With this kit</h3>
+        <ul style="color:var(--accent);padding-left:1.5rem">
+          <li><code class="mono">pp "fix the auth bug"</code> → saved with auto-name + tags.</li>
+          <li>Agent hits 80k tokens → <strong>ctxguard</strong> warns or compresses via <code class="mono">/compact</code>.</li>
+          <li>Every <code class="mono">tools/call</code> goes through <strong>mcp-sentry</strong> policy.</li>
+          <li><code class="mono">recall-ai find "auth bug"</code> → FTS5 in 20 ms.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section style="text-align:center;padding:5rem 0 3rem">
+    <h2 class="section-h" style="margin-bottom:1.5rem">Built solo. MIT OR Apache-2.0. 100% local.</h2>
+    <p style="color:var(--fg-dim);font-size:1.1rem;max-width:600px;margin:0 auto 2.5rem">
+      Five days, four production CLIs, one coherent kit. Same author,
+      same stack, same release cadence. No SaaS, no telemetry, no
+      lock-in. Just five single binaries that do their job.
+    </p>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
+      <a href="https://github.com/kezhu-ai" class="cta">★ Star the kit</a>
+      <a href="https://github.com/kezhu-ai/ctxguard/issues" class="cta secondary">Open an issue</a>
+    </div>
+  </section>
+
+  <footer style="border-top:1px solid var(--border);padding-top:2rem;margin-top:3rem;color:var(--fg-dim);font-size:14px;text-align:center">
+    <p>made with 🦀 by <a href="https://github.com/kezhu-ai" style="color:var(--fg);text-decoration:none">@kezhu-ai</a> · MIT OR Apache-2.0</p>
+  </footer>
+
+</div>
+
+</body>
+</html>
