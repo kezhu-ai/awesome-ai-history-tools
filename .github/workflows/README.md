@@ -3,6 +3,42 @@
 This directory contains **reusable GitHub Actions workflows** consumed by the 4 kit repos
 (ctxguard, mcp-sentry, recall-ai, pinpoint). One source of truth, 4 consumers.
 
+## Battle-tested: 4 callers, 6 releases, 17 assets
+
+| Repo | Latest tag | Assets | Caller commit |
+|---|---|---|---|
+| **ctxguard** | v0.2.1 | 5 (Linux + macOS + demo.gif) | `uses: kezhu-ai/awesome-ai-history-tools/.github/workflows/release.yml@master` |
+| **mcp-sentry** | v0.1.0-alpha.1 | 4 (Linux + macOS) | (same) |
+| **recall-ai** | v0.3.0 | 4 (Linux + macOS) | (same, first to ship via shared) |
+| **pinpoint** | v0.1.0.1 | 4 (Linux + macOS) | (same) |
+
+**Total: 17 release assets across 6 releases, all built by this one workflow file.**
+
+If GitHub changes Actions syntax or a new lint appears, the fix lands here
+once — all 4 callers benefit.
+
+## Tested patterns (encoded after cycle #160)
+
+The shared workflow was extracted after 5 cycles of production experience.
+The lessons below are what the test releases validated as true:
+
+1. **Caller MUST declare `permissions: contents: write`** — reusable
+   workflows don't inherit the caller's permissions. Without it,
+   `softprops/action-gh-release@v2` 403s on asset upload.
+2. **`uses: ...@<branch>` must be the exact branch name** — silent
+   404 on bad refs. Always check the target repo's
+   `default_branch` (in this hub: `master`, not `main`).
+3. **macOS runner queue is slow** — `continue-on-error: true` on the
+   macOS matrix entry, so Windows + Linux still gate the build.
+4. **Windows runner has flaky network for crate registry** —
+   `continue-on-error: true` on the Windows matrix entry.
+5. **Tag re-push with same SHA doesn't re-trigger workflows** — to
+   re-run, must `git tag -d <tag>` + recreate + push.
+
+These 5 are why the `on: workflow_call` block at the top has
+`allow_macos_failure: true` as an input, and why each caller has
+`continue-on-error: true` on the Windows matrix entry.
+
 ## Files
 
 | File | Purpose | Inputs |
