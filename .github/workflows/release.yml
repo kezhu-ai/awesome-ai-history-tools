@@ -1,0 +1,84 @@
+name: Reusable release workflow
+
+# This workflow is called from each kit repo with:
+#   uses: kezhu-ai/awesome-ai-history-tools/.github/workflows/release.yml@main
+#   with:
+#     config: <see inputs>
+#
+# Single source of truth for all 4 tool repos (ctxguard, mcp-sentry,
+# recall-ai, pinpoint). Update this file once, all 4 repos benefit.
+
+on:
+  workflow_call:
+    inputs:
+      tool_name:
+        description: 'Crate name (e.g. ctxguard, recall-ai, pinpoint, mcp-sentry)'
+        required: true
+        type: string
+      binary:
+        description: 'Compiled binary name on disk'
+        required: true
+        type: string
+      binary_windows:
+        description: 'Compiled binary name on Windows (.exe suffix)'
+        required: true
+        type: string
+      allow_macos_failure:
+        description: 'macOS queue is often slow; set to true to tolerate'
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  release:
+    name: release on ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.allow_failure }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            artifact: ${{ inputs.tool_name }}-linux-x86_64
+            binary: ${{ inputs.binary }}
+            allow_failure: false
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            artifact: ${{ inputs.tool_name }}-macos-aarch64
+            binary: ${{ inputs.binary }}
+            allow_failure: ${{ inputs.allow_macos_failure }}
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            artifact: ${{ inputs.tool_name }}-windows-x86_64.exe
+            binary: ${{ inputs.binary_windows }}
+            allow_failure: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ${{ inputs.tool_name }} -> target
+      - run: cargo build --release --locked
+      - name: Package
+        # Windows bsdtar chokes on `2>/dev/null` (treats as path 'D:\dev\null').
+        # Use PowerShell Compress-Archive on Windows runner.
+        continue-on-error: true
+        run: |
+          mkdir -p dist
+          cp target/release/${{ matrix.binary }} dist/${{ matrix.artifact }}
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            cd dist && powershell -NoProfile -Command "Compress-Archive -Force -Path '${{ matrix.artifact }}' -DestinationPath '${{ matrix.artifact }}.zip'" && cd ..
+          else
+            tar -C dist -czf dist/${{ matrix.artifact }}.tar.gz ${{ matrix.artifact }}
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/${{ matrix.artifact }}
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/${{ matrix.artifact }}
+            dist/${{ matrix.artifact }}.tar.gz
+            dist/${{ matrix.artifact }}.zip

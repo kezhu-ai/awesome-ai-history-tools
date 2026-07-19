@@ -1,0 +1,90 @@
+name: Reusable render-demo workflow
+
+# Usage (from any kit repo's .github/workflows/render-demo.yml):
+#   uses: kezhu-ai/awesome-ai-history-tools/.github/workflows/render-demo.yml@main
+#   with:
+#     tool_name: ctxguard
+#     seed_data_script: ./tests/seed.sh    # optional path to bash script that
+#                                         # creates the synthetic data the demo uses
+#     demo_tape_path: ./demo.tape
+#     run_under_home: true               # if demo needs HOME=/tmp/demo-data/...
+
+on:
+  workflow_call:
+    inputs:
+      tool_name:
+        required: true
+        type: string
+      demo_tape_path:
+        required: true
+        type: string
+        default: './demo.tape'
+      seed_data_script:
+        required: false
+        type: string
+        default: ''
+      run_under_home:
+        required: false
+        type: boolean
+        default: false
+      home_dir:
+        required: false
+        type: string
+        default: '/tmp/demo-home'
+
+jobs:
+  gif:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ${{ inputs.tool_name }} -> target
+
+      - name: Build ${{ inputs.tool_name }}
+        run: cargo build --release --locked
+
+      - name: Install vhs + ttyd + ffmpeg
+        run: |
+          curl -fsSL https://github.com/charmbracelet/vhs/releases/download/v0.11.0/vhs_0.11.0_Linux_x86_64.tar.gz \
+            | tar xz -C /tmp
+          sudo mv /tmp/vhs_0.11.0_Linux_x86_64/vhs /usr/local/bin/vhs
+          vhs --version
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg ttyd
+
+      - name: Seed demo data
+        if: inputs.seed_data_script != ''
+        run: ${{ inputs.seed_data_script }}
+
+      - name: Render demo.gif
+        if: inputs.run_under_home
+        env:
+          HOME: ${{ inputs.home_dir }}
+        run: |
+          mkdir -p $HOME
+          cd $HOME
+          vhs ${{ github.workspace }}/${{ inputs.demo_tape_path }} 2>&1 | tail -5
+          ls -la demo.gif
+        shell: bash
+
+      - name: Render demo.gif (no HOME override)
+        if: "!inputs.run_under_home"
+        run: vhs ${{ inputs.demo_tape_path }} 2>&1 | tail -5
+
+      - name: Verify GIF
+        run: |
+          file demo.gif
+          du -h demo.gif
+
+      - name: Commit demo.gif
+        run: |
+          git config user.name "ci-bot"
+          git config user.email "ci@local"
+          git add demo.gif
+          git diff --cached --quiet || git commit -m "chore: regenerate demo.gif"
+          git push
